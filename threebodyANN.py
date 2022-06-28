@@ -3,11 +3,13 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 
+# Function f(x)
 def mFactor(X):
     x = X[0]
     y = X[1]
     return x*y*(x-3)*(y-3)
 
+# Derivative f(x)
 def dermFactor(X,var):
     x = X[0]
     y = X[1]
@@ -16,6 +18,7 @@ def dermFactor(X,var):
     elif var == 'y':
         return x*(x-3)*(2*y-3)
 
+# Second derivative f(x)
 def der2mFactor(X,var):
     x = X[0]
     y = X[1]
@@ -24,6 +27,7 @@ def der2mFactor(X,var):
     elif var == 'y':
         return 2*x*(x-3)
 
+# Apply the function into the tensor
 def mapfun(fun,tensor,var=None):
     result = torch.ones([tensor.size()[0],1])
     if fun == mFactor:
@@ -34,6 +38,7 @@ def mapfun(fun,tensor,var=None):
             result[i] *= fun(tensor[i],var=var)
     return result
 
+# Fixes the seed
 # seed = 0
 # torch.manual_seed(seed)
 
@@ -57,6 +62,7 @@ h = (xlim[1]-xlim[0])/(Nmesh)
 x_train = torch.linspace(xlim[0],xlim[1],Nmesh+1)
 y_train = torch.linspace(ylim[0],ylim[1],Nmesh+1)
 
+# Creates the grid
 grid = torch.cartesian_prod(x_train,y_train)
 
 # Derivatives of the mFactor
@@ -83,6 +89,7 @@ class ANNv4(nn.Module):
 
         return out
 
+# 1st derivative numerical
 def der1num(x, var):
     mat = torch.reshape(x,(Nmesh+1,Nmesh+1))
 
@@ -109,6 +116,7 @@ def der1num(x, var):
 
     return torch.reshape(fmat,(-1,1))
 
+# 2nd derivative numerical
 def der2num(x,var):
     mat = torch.reshape(x,(Nmesh+1,Nmesh+1))
 
@@ -134,6 +142,7 @@ def der2num(x,var):
 
     return torch.reshape(fmat,(-1,1))
 
+# Inialitze the integration weigts (Simpson --> 1 2 4 2 ... 4 1)
 def ini_weights():
     global W
 
@@ -166,7 +175,7 @@ def ini_weights():
     W = torch.matmul(Wy,Wx)
     W = W.reshape((-1,1))
 
-
+# Loss/cost function
 def cost(): # Energy
     lx,ly = avar #avar --> angular variables (lx,ly)
     G = grid.clone()
@@ -174,10 +183,6 @@ def cost(): # Energy
     Z = model(G)
 
     # Derivatives
-    # first_der, = torch.autograd.grad(outputs=Z, grad_outputs=torch.ones_like(Z), inputs=grid, create_graph=True)
-    # second_der, = torch.autograd.grad(outputs=first_der, grad_outputs=torch.ones_like(first_der), inputs=grid, create_graph=True)
-    d1x = der1num(Z,var = 'x')
-    d1y = der1num(Z,var = 'y')
     d2x = der2num(Z,var = 'x')
     d2y = der2num(Z,var = 'y')
 
@@ -206,11 +211,11 @@ def cost(): # Energy
 ini_weights()
 
 # TRAINING
-epochs = 1000
+epochs = 1000 # Iterations
 
 model = ANNv4()
 
-# Load:
+# LOAD TRAINED MODEL
 # lPATH = 'v4/models/parabola100.pth'
 # model.load_state_dict(torch.load(lPATH))
 # model.eval()
@@ -220,10 +225,12 @@ NOM = 'prova'
 file = open('v4/txt/'+NOM+'.txt', 'w')
 
 learningrate = 1e-2
-optimizer = torch.optim.RMSprop(model.parameters(),lr=learningrate)
+#optimizer = torch.optim.RMSprop(model.parameters(),lr=learningrate)
+optimizer = torch.optim.Adam(model.parameters(),lr=learningrate)
 
 tot_loss = []
 
+# TRAINING
 for i in range(epochs):
     loss, U, K, phi = cost()
 
@@ -251,6 +258,7 @@ for i in phi:
     file.write(str(i.item())+'\n')
 file.close()
 
+#Plot energy vs iterations
 # plt.plot(torch.linspace(1, epochs, epochs).numpy(), tot_loss,label='$E$')
 # plt.show()
 
