@@ -182,7 +182,15 @@ def cost(): # Energy
 
     Z = model(G)
 
-    # Derivatives
+    # DERIVATIVES
+    
+    # Autograd
+    # first_der, = torch.autograd.grad(outputs=Z, grad_outputs=torch.ones_like(Z), inputs=grid, create_graph=True)
+    # second_der, = torch.autograd.grad(outputs=first_der, grad_outputs=torch.ones_like(first_der), inputs=grid, create_graph=True)
+    
+    # No autograd
+    d1x = der1num(Z,var = 'x')
+    d1y = der1num(Z,var = 'y')
     d2x = der2num(Z,var = 'x')
     d2y = der2num(Z,var = 'y')
 
